@@ -59,9 +59,10 @@ const ApplicantsTable = () => {
                                 {item?.applicant?.profile?.resume ? (
                                     <a
                                         className="text-blue-600 cursor-pointer"
-                                        href={item?.applicant?.profile?.resume}
+                                       href={item?.applicant?.profile?.resume}
                                         target="_blank"
                                         rel="noopener noreferrer"
+                                         download={item?.applicant?.profile?.resumeOriginalName || "resume.pdf"}
                                     >
                                         {item?.applicant?.profile?.resumeOriginalName}
                                     </a>
