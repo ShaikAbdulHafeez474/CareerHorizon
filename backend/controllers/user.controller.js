@@ -144,17 +144,22 @@ export const logout = async (req, res) => {
 export const updateProfile = async (req, res) => {
     try {
         const { fullname, email, phoneNumber, bio, skills } = req.body;
-
         const file = req.file;
         let cloudResponse = null;
+
         if (file) {
             const fileUri = getDataUri(file);
-            cloudResponse = await cloudinary.uploader.upload(fileUri.content);
+
+            // ✅ Upload as raw (for PDF)
+            cloudResponse = await cloudinary.uploader.upload(fileUri.content, {
+                resource_type: "raw",  // important for PDFs and other non-image files
+               /// folder: "resumes"      // optional: store all resumes in a folder
+            });
         }
 
         let skillsArray = [];
         if (skills) {
-            skillsArray = skills.split(",");
+            skillsArray = skills.split(",").map(s => s.trim());
         }
 
         const userId = req.id;
@@ -174,8 +179,8 @@ export const updateProfile = async (req, res) => {
         if (skills) user.profile.skills = skillsArray;
 
         if (cloudResponse) {
-            user.profile.resume = cloudResponse.secure_url;
-            user.profile.resumeOriginalName = file.originalname;
+            user.profile.resume = cloudResponse.secure_url;         // URL to use in frontend
+            user.profile.resumeOriginalName = file.originalname;    // original filename
         }
 
         await user.save();
@@ -189,14 +194,13 @@ export const updateProfile = async (req, res) => {
             profile: user.profile
         };
 
-        // ✅ generate fresh token (optional, in case you want updated claims)
         const tokenData = { userId: user._id };
         const token = jwt.sign(tokenData, process.env.SECRET_KEY, { expiresIn: '1d' });
 
         return res.status(200).json({
             message: "Profile updated successfully.",
             user,
-            token,   // ✅ send token here too
+            token,
             success: true
         });
 
@@ -209,3 +213,5 @@ export const updateProfile = async (req, res) => {
         });
     }
 };
+
+
