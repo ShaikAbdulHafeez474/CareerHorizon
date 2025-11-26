@@ -131,54 +131,69 @@ function AiModel() {
     };
 
     // --- Gemini API Call Function ---
-    const callGeminiAPI = async (prompt, isChat = false) => {
-        if (!isClientInitialized || !genAI.current) {
-            setError("Gemini AI not initialized."); return null;
-        }
-        if (!resumeText) {
-            setError("Please upload and process a resume first."); return null;
-        }
-        if (!jobDescription && (prompt.includes("Job Description:") || prompt.includes("job description"))) {
-            setError("Please enter the Job Description for this analysis."); return null;
+   const callGeminiAPI = async (prompt, isChat = false) => {
+    if (!isClientInitialized || !genAI.current) {
+        setError("Gemini AI not initialized."); 
+        return null;
+    }
+    if (!resumeText) {
+        setError("Please upload and process a resume first."); 
+        return null;
+    }
+    if (!jobDescription && (prompt.includes("Job Description:") || prompt.includes("job description"))) {
+        setError("Please enter the Job Description for this analysis."); 
+        return null;
+    }
+
+    setIsLoading(true);
+    setError('');
+
+    if (!isChat) {
+        setAnalysisResult('Generating response...');
+    }
+
+    try {
+        const model = genAI.current.getGenerativeModel({ model: MODEL_NAME });
+        const generationConfig = { /* ... */ };
+        const safetySettings = [ /* ... */ ];
+
+        // ✅ NEW v1 API call (REQUIRED)
+        const result = await model.generateContent({
+            contents: [
+                {
+                    role: "user",
+                    parts: [{ text: prompt }]
+                }
+            ],
+            generationConfig,
+            safetySettings
+        });
+
+        const response = result?.response;
+
+        if (response) {
+            return response.text();
+        } else {
+            const blockReason = response?.promptFeedback?.blockReason;
+            throw new Error(`No valid response from API. ${blockReason ? `Reason: ${blockReason}` : 'Unknown reason'}`);
         }
 
-        setIsLoading(true);
-        setError('');
-        // Keep analysis result during chat generation, clear only for button clicks
-        if (!isChat) {
-            setAnalysisResult('Generating response...');
+    } catch (err) {
+        console.error('Error calling Gemini API:', err);
+        const errorMessage = `API Error: ${err.message || 'An unknown error occurred'}.`;
+        setError(errorMessage);
+
+        if (isChat) {
+            setChatHistory(prev => [...prev, { role: 'model', text: `*Error: ${err.message}*` }]);
+        } else {
+            setAnalysisResult(errorMessage);
         }
 
-        try {
-            const model = genAI.current.getGenerativeModel({ model: MODEL_NAME });
-            const generationConfig = { /* ... temperature, topK, etc. ... */ };
-            const safetySettings = [ /* ... */];
-
-            const result = await model.generateContent(prompt, generationConfig, safetySettings);
-            const response = result?.response;
-
-            if (response) {
-                return response.text();
-            } else {
-                const blockReason = response?.promptFeedback?.blockReason;
-                throw new Error(`No valid response from API. ${blockReason ? `Reason: ${blockReason}` : 'Unknown reason'}`);
-            }
-        } catch (err) {
-            console.error('Error calling Gemini API:', err);
-            const errorMessage = `API Error: ${err.message || 'An unknown error occurred'}.`;
-            setError(errorMessage);
-            if (isChat) {
-                // Add error to chat history if API call fails during chat
-                setChatHistory(prev => [...prev, { role: 'model', text: `*Error: ${err.message}*` }]);
-            } else {
-                // Display error in main analysis area for button clicks
-                setAnalysisResult(errorMessage);
-            }
-            return null;
-        } finally {
-            setIsLoading(false);
-        }
-    };
+        return null;
+    } finally {
+        setIsLoading(false);
+    }
+};
 
     // --- Specific Analysis Functions ---
     const getSummary = async () => {
