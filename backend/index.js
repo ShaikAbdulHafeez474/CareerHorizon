@@ -17,7 +17,7 @@ app.use(express.json());
 app.use(express.urlencoded({extended:true}));
 app.use(cookieParser());
 const corsOptions = {
-    origin:'https://careerhorizon-dm1i.onrender.com',
+    origin:'https://careerhorizon-frontend.onrender.com',
     // origin:'https://careerhorizon-8vdt.onrender.com',
     credentials:true
 }
