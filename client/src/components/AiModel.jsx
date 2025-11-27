@@ -20,7 +20,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 // ---
 
-const MODEL_NAME = "gemini-2.5-pro"; // Updated model name
+const MODEL_NAME = "gemini-2.5-flash"; // Updated model name
 
 function AiModel() {
     const [jobDescription, setJobDescription] = useState('');
